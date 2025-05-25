@@ -1,9 +1,25 @@
 from django.db import models
 from django.contrib.auth.models import AbstractUser
-from django.contrib.auth.validators import UnicodeUsernameValidator
+from django.core.validators import RegexValidator
 
 
 class User(AbstractUser):
+    username = models.CharField(
+        "Никнейм",
+        unique=True,
+        max_length=150,
+        blank=False,
+        null=False,
+        validators=[
+            RegexValidator(
+                regex=r"^[\w.@+-]+\Z",
+            )
+        ],
+        error_messages={
+            'unique': 'Никнейм занят.',
+        },
+    )
+
     first_name = models.CharField(
         "Имя",
         max_length=150,
@@ -16,18 +32,6 @@ class User(AbstractUser):
         max_length=150,
         blank=False,
         null=False
-    )
-
-    username = models.CharField(
-        "Никнейм",
-        unique=True,
-        max_length=150,
-        blank=False,
-        null=False,
-        validators=[UnicodeUsernameValidator],
-        error_messages={
-            'unique': 'Никнейм занят.',
-        },
     )
 
     email = models.EmailField(
@@ -67,7 +71,7 @@ class Subscription(models.Model):
 
     author = models.ForeignKey(
         User,
-        verbose_name='Автор',
+        verbose_name='Автор рецептов',
         related_name='authors',
         on_delete=models.CASCADE
     )
