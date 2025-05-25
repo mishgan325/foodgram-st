@@ -4,11 +4,12 @@ from rest_framework_simplejwt.views import TokenRefreshView
 
 
 # from api.views import IngredientViewSet, RecipeViewSet, TagViewSet, UserViewSet
+from api.views import UserViewSet
 
 app_name = 'api'
 
 router = DefaultRouter()
-# router.register('users', UserViewSet, basename='user')
+router.register(r'users', UserViewSet, basename='user')
 
 urlpatterns = [
     path('', include(router.urls)),
