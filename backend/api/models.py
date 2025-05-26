@@ -29,7 +29,7 @@ class ShoppingCart(models.Model):
         ]
 
     def __str__(self):
-        return f"{self.user} выбрал ({self.measurement_unit})"
+        return f"Пользователь {self.user} добавил рецепт '{self.recipe.title}' в корзину"
 
 
 class Favorite(models.Model):
@@ -43,7 +43,7 @@ class Favorite(models.Model):
     recipe = models.ForeignKey(
         Recipe,
         on_delete=models.CASCADE,
-        related_name='favorite_recipies',
+        related_name='favorite_recipes',
         verbose_name="Избранный рецепт"
     )
 
@@ -58,4 +58,4 @@ class Favorite(models.Model):
         ]
 
     def __str__(self):
-        return f"{self.user} оценил ({self.measurement_unit})"
+        return f"Пользователь {self.user} добавил рецепт '{self.recipe.title}' в избранное"

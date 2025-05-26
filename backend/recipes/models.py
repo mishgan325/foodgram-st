@@ -21,7 +21,7 @@ class Ingredient(models.Model):
     class Meta:
         verbose_name = "Ингредиент"
         verbose_name_plural = "Ингредиенты"
-        ordering = ["name"]
+        ordering = ("name",)
 
     def __str__(self):
         return f"{self.name} ({self.measurement_unit})"
@@ -35,7 +35,7 @@ class Recipe(models.Model):
         verbose_name="Автор рецепта"
     )
 
-    title = models.CharField(
+    name = models.CharField(
         max_length=256,
         verbose_name="Название"
     )
@@ -45,7 +45,7 @@ class Recipe(models.Model):
         verbose_name="Картинка"
     )
 
-    description = models.TextField(
+    text = models.TextField(
         verbose_name="Текстовое описание"
     )
 
@@ -63,16 +63,16 @@ class Recipe(models.Model):
 
     publication_date = models.DateTimeField(
         "Дата публикации",
-        auto_now_add=False
+        auto_now_add=True
     )
 
     class Meta:
         verbose_name = "Рецепт"
         verbose_name_plural = "Рецепты"
-        ordering = ("-created")
+        ordering = ("-publication_date",)
 
     def __str__(self):
-        return self.title
+        return self.name
 
 
 class RecipeIngredient(models.Model):
@@ -90,7 +90,7 @@ class RecipeIngredient(models.Model):
         verbose_name="Ингредиент"
     )
 
-    amount = models.FloatField(
+    amount = models.PositiveIntegerField(
         verbose_name="Количество",
         validators=[MinValueValidator(MIN_INGREDIENT_AMOUNT)]
     )
@@ -103,5 +103,5 @@ class RecipeIngredient(models.Model):
     def __str__(self):
         return (
             f"{self.ingredient.name} - {self.amount}"
-            f"{self.measurement_unit}"
+            f"{self.ingredient.measurement_unit}"
         )
