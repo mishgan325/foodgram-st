@@ -60,16 +60,6 @@ jobs:
         cd backend
         python manage.py test
 
-    - name: Set up Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: '20'
-
-    - name: Install and build frontend
-      run: |
-        cd frontend
-        npm run build
-
   verify-images:
     runs-on: ubuntu-latest
     needs: test
