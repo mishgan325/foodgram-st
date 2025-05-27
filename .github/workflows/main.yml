@@ -60,27 +60,27 @@ jobs:
         cd backend
         python manage.py test
 
-    build-and-push:
-      runs-on: ubuntu-latest
-      needs: test
-      steps:
-        - uses: actions/checkout@v4
+  build-and-push:
+    runs-on: ubuntu-latest
+    needs: test
+    steps:
+      - uses: actions/checkout@v4
 
-        - name: Log in to Docker Hub
-          uses: docker/login-action@v3
-          with:
-            username: ${{ secrets.DOCKERHUBNAME }}
-            password: ${{ secrets.DOCKERHUBTOKEN }}
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUBNAME }}
+          password: ${{ secrets.DOCKERHUBTOKEN }}
 
-        - name: Build and push backend image
-          run: |
-            docker build -t ${{ env.BACKEND_IMAGE }} ./backend
-            docker push ${{ env.BACKEND_IMAGE }}
+      - name: Build and push backend image
+        run: |
+          docker build -t ${{ env.BACKEND_IMAGE }} ./backend
+          docker push ${{ env.BACKEND_IMAGE }}
 
-        - name: Build and push frontend image
-          run: |
-            docker build -t ${{ env.FRONTEND_IMAGE }} ./frontend
-            docker push ${{ env.FRONTEND_IMAGE }}
+      - name: Build and push frontend image
+        run: |
+          docker build -t ${{ env.FRONTEND_IMAGE }} ./frontend
+          docker push ${{ env.FRONTEND_IMAGE }}
 
   verify-images:
     runs-on: ubuntu-latest
