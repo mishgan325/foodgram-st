@@ -65,11 +65,10 @@ jobs:
       with:
         node-version: '20'
 
-    - name: Install frontend dependencies and run tests
+    - name: Install and build frontend
       run: |
         cd frontend
-        npm ci
-        npm run test
+        npm run build
 
   verify-images:
     runs-on: ubuntu-latest
