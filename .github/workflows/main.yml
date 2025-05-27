@@ -1,0 +1,113 @@
+name: CI
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+env:
+  DOCKERHUB_USERNAME: mishgan325
+  BACKEND_IMAGE: mishgan325/foodgram_final-backend
+  FRONTEND_IMAGE: mishgan325/foodgram_final-frontend
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:13
+        env:
+          POSTGRES_DB: foodgram
+          POSTGRES_USER: foodgram_user
+          POSTGRES_PASSWORD: foodgram_password
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      DB_HOST: localhost
+      DB_PORT: 5432
+      POSTGRES_DB: foodgram
+      POSTGRES_USER: foodgram_user
+      POSTGRES_PASSWORD: foodgram_password
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Install OS dependencies for Pillow
+      run: sudo apt-get update && sudo apt-get install -y libjpeg-dev zlib1g-dev
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.10'
+
+    - name: Install Python dependencies and run linter
+      run: |
+        python -m pip install --upgrade pip
+        pip install ruff
+        cd backend
+        pip install -r requirements.txt
+        ruff check .
+
+    - name: Run backend tests
+      run: |
+        cd backend
+        python manage.py test
+
+    - name: Set up Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+
+    - name: Install frontend dependencies and run tests
+      run: |
+        cd frontend
+        npm ci
+        npm run test
+
+  verify-images:
+    runs-on: ubuntu-latest
+    needs: test
+    steps:
+    - name: Login to DockerHub
+      uses: docker/login-action@v3
+      with:
+        username: ${{ secrets.DOCKERHUBNAME }}
+        password: ${{ secrets.DOCKERHUBTOKEN }}
+
+    - name: Pull and verify images
+      run: |
+        docker pull ${{ env.BACKEND_IMAGE }}
+        docker pull ${{ env.FRONTEND_IMAGE }}
+        docker images | grep foodgram
+
+  notify:
+    needs: [test, verify-images]
+    runs-on: ubuntu-latest
+    if: always()
+    steps:
+      - name: Notify Telegram
+        uses: appleboy/telegram-action@master
+        with:
+          to: ${{ secrets.TELEGRAMCHATID }}
+          token: ${{ secrets.TELEGRAMBOTTOKEN }}
+          format: html
+          message: |
+            <b>foodgram CI/CD Status</b>
+
+            <b>Event:</b> ${{ github.event_name }}
+            <b>Branch:</b> ${{ github.ref }}
+            <b>Commit:</b> ${{ github.sha }}
+            <b>Author:</b> ${{ github.actor }}
+
+            <b>Test Status:</b> ${{ needs.test.result }}
+            <b>Images Status:</b> ${{ needs.verify-images.result }}
+
+            <b>Details:</b>
+            <a href="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}">View Run</a>
