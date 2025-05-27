@@ -29,8 +29,11 @@ services:
       sh -c "
         python manage.py migrate &&
         python manage.py load_ingredients ingredients.json &&
+        echo \"from django.contrib.auth import get_user_model; User = get_user_model(); \
+      if not User.objects.filter(email='admin@admin.admin').exists(): User.objects.create_superuser('admin', 'admin@admin.admin', 'admin123', first_name='admin', last_name='admin')\" | python manage.py shell &&
         gunicorn foodgram_backend.wsgi:application --bind 0.0.0.0:8000
       "
+
 
   frontend:
     container_name: foodgram-front
