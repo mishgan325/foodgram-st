@@ -1,6 +1,6 @@
-from django.db import models
 from django.conf import settings
 from django.core.validators import MinValueValidator
+from django.db import models
 
 MIN_COOKING_TIME = 1
 MIN_INGREDIENT_AMOUNT = 1

@@ -31,15 +31,23 @@ class Command(BaseCommand):
 
             if not name or not unit:
                 self.stdout.write(
-                    self.style.WARNING(f"Пропущен некорректный элемент: {item}")
+                    self.style.WARNING(
+                        f"Пропущен некорректный элемент: {item}"
+                    )
                 )
                 continue
 
-            if not Ingredient.objects.filter(name=name, measurement_unit=unit).exists():
-                ingredients_to_create.append(Ingredient(name=name, measurement_unit=unit))
+            if not Ingredient.objects.filter(
+                name=name, measurement_unit=unit
+            ).exists():
+                ingredients_to_create.append(
+                    Ingredient(name=name, measurement_unit=unit)
+                )
 
         created = Ingredient.objects.bulk_create(ingredients_to_create)
 
         self.stdout.write(
-            self.style.SUCCESS(f"Добавлено {len(created)} новых ингредиентов.")
+            self.style.SUCCESS(
+                f"Добавлено {len(created)} новых ингредиентов."
+            )
         )
