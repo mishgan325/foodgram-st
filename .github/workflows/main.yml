@@ -30,41 +30,39 @@ jobs:
           --health-retries 5
 
     env:
-      DB_HOST: postgres
+      DB_HOST: localhost
       DB_PORT: 5432
       POSTGRES_DB: foodgram
       POSTGRES_USER: foodgram_user
       POSTGRES_PASSWORD: foodgram_password
 
     steps:
-    - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-    - name: Install OS dependencies for Pillow
-      run: sudo apt-get update && sudo apt-get install -y libjpeg-dev zlib1g-dev
+      - name: Install OS dependencies for Pillow
+        run: sudo apt-get update && sudo apt-get install -y libjpeg-dev zlib1g-dev
 
-    - name: Set up Python
-      uses: actions/setup-python@v5
-      with:
-        python-version: '3.10'
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
 
-    - name: Install Python dependencies and run linter
-      run: |
-        python -m pip install --upgrade pip
-        pip install ruff
-        cd backend
-        pip install -r requirements.txt
-        ruff check .
+      - name: Install Python dependencies and run linter
+        run: |
+          python -m pip install --upgrade pip
+          pip install ruff
+          cd backend
+          pip install -r requirements.txt
+          ruff check .
 
-    - name: Run backend tests
-      run: |
-        cd backend
-        python manage.py test
+      - name: Run backend tests
+        run: |
+          cd backend
+          python manage.py test
 
   build-and-push:
     runs-on: ubuntu-latest
-    needs: 
-      - test
-
+    needs: test
     env:
       BACKEND_IMAGE: ${{ env.BACKEND_IMAGE }}
       FRONTEND_IMAGE: ${{ env.FRONTEND_IMAGE }}
@@ -82,30 +80,33 @@ jobs:
         run: docker compose -f infra/docker-compose.yml build
 
       - name: Push backend image
+        env:
+          BACKEND_IMAGE: ${{ env.BACKEND_IMAGE }}
         run: docker push $BACKEND_IMAGE
 
       - name: Push frontend image
+        env:
+          FRONTEND_IMAGE: ${{ env.FRONTEND_IMAGE }}
         run: docker push $FRONTEND_IMAGE
 
   verify-images:
     runs-on: ubuntu-latest
     needs: build-and-push
-
     steps:
-    - name: Login to DockerHub
-      uses: docker/login-action@v3
-      with:
-        username: ${{ secrets.DOCKERHUBNAME }}
-        password: ${{ secrets.DOCKERHUBTOKEN }}
+      - name: Login to DockerHub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUBNAME }}
+          password: ${{ secrets.DOCKERHUBTOKEN }}
 
-    - name: Pull and verify images
-      run: |
-        docker pull ${{ env.BACKEND_IMAGE }}
-        docker pull ${{ env.FRONTEND_IMAGE }}
-        docker images | grep foodgram
+      - name: Pull and verify images
+        run: |
+          docker pull ${{ env.BACKEND_IMAGE }}
+          docker pull ${{ env.FRONTEND_IMAGE }}
+          docker images | grep foodgram
 
   notify:
-    needs: [test, verify-images]
+    needs: [test, build-and-push, verify-images]
     runs-on: ubuntu-latest
     if: always()
     steps:
@@ -124,6 +125,7 @@ jobs:
             <b>Author:</b> ${{ github.actor }}
 
             <b>Test Status:</b> ${{ needs.test.result }}
+            <b>Build & Push Status:</b> ${{ needs.build-and-push.result }}
             <b>Images Status:</b> ${{ needs.verify-images.result }}
 
             <b>Details:</b>
