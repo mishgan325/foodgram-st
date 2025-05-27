@@ -1,6 +1,7 @@
+from django.shortcuts import redirect, get_object_or_404
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
-from django.shortcuts import redirect, get_object_or_404
+
 from api.views import UserViewSet, IngredientViewSet, RecipeViewSet
 from recipes.models import Recipe
 
