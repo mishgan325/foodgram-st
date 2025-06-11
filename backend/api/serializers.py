@@ -164,13 +164,18 @@ class RecipeSerializer(serializers.ModelSerializer):
 
 class RecipeCreateSerializer(serializers.ModelSerializer):
     ingredients = RecipeIngredientWriteSerializer(many=True)
-    image = Base64ImageField()
+    image = Base64ImageField(required=True, allow_null=False)
 
     class Meta:
         model = Recipe
         fields = [
             'ingredients', 'image', 'name', 'text', 'cooking_time'
         ]
+
+    def validate_image(self, value):
+        if not value:
+            raise serializers.ValidationError("Поле image не может быть пустым.")
+        return value
 
     def validate_ingredients(self, value):
         if not value:
