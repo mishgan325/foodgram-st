@@ -68,9 +68,12 @@ WSGI_APPLICATION = 'foodgram_backend.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': os.getenv('POSTGRES_DB', 'foodgram_db-mishgan325'),
-        'USER': os.getenv('POSTGRES_USER', 'foodgram_user-mishgan325'),
-        'PASSWORD': os.getenv('POSTGRES_PASSWORD', 'foodgram_password-mishgan325'),
+        'NAME': os.getenv('POSTGRES_DB',
+                          'foodgram_db-mishgan325'),
+        'USER': os.getenv('POSTGRES_USER',
+                          'foodgram_user-mishgan325'),
+        'PASSWORD': os.getenv('POSTGRES_PASSWORD',
+                              'foodgram_password-mishgan325'),
         'HOST': os.getenv('POSTGRES_HOST', 'localhost'),
         'PORT': os.getenv('POSTGRES_PORT', '5432'),
     }
@@ -79,16 +82,20 @@ DATABASES = {
 
 AUTH_PASSWORD_VALIDATORS = [
     {
-        'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
+        'NAME': 'django.contrib.auth.password_validation.'
+        'UserAttributeSimilarityValidator',
     },
     {
-        'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
+        'NAME': 'django.contrib.auth.password_validation.'
+        'MinimumLengthValidator',
     },
     {
-        'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator',
+        'NAME': 'django.contrib.auth.password_validation.'
+        'CommonPasswordValidator',
     },
     {
-        'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
+        'NAME': 'django.contrib.auth.password_validation.'
+        'NumericPasswordValidator',
     },
 ]
 
@@ -124,7 +131,8 @@ REST_FRAMEWORK = {
     'DEFAULT_FILTER_BACKENDS': [
         'django_filters.rest_framework.DjangoFilterBackend',
     ],
-    "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
+    "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination."
+    "PageNumberPagination",
     "PAGE_SIZE": MAX_PAGE_SIZE
 }
 
