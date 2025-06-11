@@ -18,9 +18,9 @@ jobs:
       postgres:
         image: postgres:13
         env:
-          POSTGRES_DB: foodgram
-          POSTGRES_USER: foodgram_user
-          POSTGRES_PASSWORD: foodgram_password
+          POSTGRES_DB: foodgram-mishgan325
+          POSTGRES_USER: foodgram_user-mishgan325
+          POSTGRES_PASSWORD: foodgram_password-mishgan325
         ports:
           - 5432:5432
         options: >-
@@ -32,9 +32,9 @@ jobs:
     env:
       DB_HOST: localhost
       DB_PORT: 5432
-      POSTGRES_DB: foodgram
-      POSTGRES_USER: foodgram_user
-      POSTGRES_PASSWORD: foodgram_password
+      POSTGRES_DB: foodgram-mishgan325
+      POSTGRES_USER: foodgram_user-mishgan325
+      POSTGRES_PASSWORD: foodgram_password-mishgan325
 
     steps:
       - uses: actions/checkout@v4

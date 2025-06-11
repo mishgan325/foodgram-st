@@ -166,7 +166,7 @@ class RecipeViewSet(ModelViewSet):
         url_path='get-link'
     )
     def get_link(self, request, pk=None):
-        short_link = request.build_absolute_uri(f'/api/s/{pk}')
+        short_link = request.build_absolute_uri(f'/s/{pk}')
         return Response({"short-link": short_link})
 
     @action(
@@ -232,7 +232,7 @@ class RecipeViewSet(ModelViewSet):
             for idx, item in enumerate(ingredients, 1):
                 line = (
                     f"{idx}. {item['ingredient__name']} "
-                    f"— {item['total_amount']} "
+                    f"- {item['total_amount']} "
                     f"{item['ingredient__measurement_unit']}"
                 )
                 p.drawString(50, y, line)

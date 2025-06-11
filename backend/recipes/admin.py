@@ -2,10 +2,14 @@ from django.contrib import admin
 from .models import Ingredient, Recipe, RecipeIngredient
 
 
+RECIPE_INGREDIENT_INLINE_EXTRA = 1
+RECIPE_INGREDIENT_INLINE_MIN_NUM = 1
+
+
 class RecipeIngredientInline(admin.TabularInline):
     model = RecipeIngredient
-    extra = 1
-    min_num = 1
+    extra = RECIPE_INGREDIENT_INLINE_EXTRA
+    min_num = RECIPE_INGREDIENT_INLINE_MIN_NUM
 
 
 @admin.register(Recipe)

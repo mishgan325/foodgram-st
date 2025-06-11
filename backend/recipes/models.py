@@ -4,11 +4,12 @@ from django.db import models
 
 MIN_COOKING_TIME = 1
 MIN_INGREDIENT_AMOUNT = 1
+INGREDIENT_NAME_MAX_LENGTH = 128
 
 
 class Ingredient(models.Model):
     name = models.CharField(
-        max_length=128,
+        max_length=INGREDIENT_NAME_MAX_LENGTH,
         verbose_name="Название",
         unique=True
     )
