@@ -17,6 +17,12 @@ from drf_extra_fields.fields import Base64ImageField
 User = get_user_model()
 
 
+MIN_INGREDIENT_AMOUNT = 1
+MAX_INGREDIENT_AMOUNT = 32000
+MIN_COOKING_TIME = 1
+MAX_COOKING_TIME = 32000
+
+
 class UserPostSerializer(BaseUserCreateSerializer):
     class Meta(BaseUserCreateSerializer.Meta):
         model = User
@@ -50,9 +56,7 @@ class FoodgramUserSerializer(BaseUserSerializer):
         request = self.context.get('request')
         if not request or not request.user.is_authenticated:
             return False
-        return Subscription.objects.filter(
-            subscriber=request.user, author=author
-        ).exists()
+        return author.subscribers.filter(subscriber=request.user).exists()
 
 
 class UserGetSerializer(serializers.ModelSerializer):
@@ -76,27 +80,16 @@ class UserGetSerializer(serializers.ModelSerializer):
         user = request.user if request else None
         if not user or not user.is_authenticated:
             return False
-        return Subscription.objects.filter(
-            subscriber=user, author=author
-        ).exists()
+        return author.subscribers.filter(subscriber=user).exists()
 
 
 class AvatarUpdateSerializer(serializers.Serializer):
-    avatar = serializers.CharField()
-
-    def validate_avatar(self, value):
-        if not value.startswith('data:image'):
-            raise serializers.ValidationError('Invalid image data')
-        return value
+    avatar = Base64ImageField()
 
     def update(self, instance, validated_data):
-        avatar_data = validated_data.get('avatar')
-        format, imgstr = avatar_data.split(';base64,')
-        ext = format.split('/')[-1]
-        data = ContentFile(
-            base64.b64decode(imgstr), name=f'avatar.{ext}'
-        )
-        instance.avatar.save(data.name, data, save=True)
+        avatar_file = validated_data.get('avatar')
+        if avatar_file:
+            instance.avatar.save(avatar_file.name, avatar_file, save=True)
         return instance
 
 
@@ -124,7 +117,8 @@ class RecipeIngredientWriteSerializer(serializers.ModelSerializer):
     id = serializers.PrimaryKeyRelatedField(
         queryset=Ingredient.objects.all()
     )
-    amount = serializers.IntegerField(min_value=1)
+    amount = serializers.IntegerField(min_value=MIN_INGREDIENT_AMOUNT,
+                                      max_value=MAX_INGREDIENT_AMOUNT)
 
     class Meta:
         model = RecipeIngredient
@@ -150,21 +144,24 @@ class RecipeSerializer(serializers.ModelSerializer):
     def get_is_favorited(self, obj):
         user = self.context['request'].user
         if user.is_authenticated:
-            return Favorite.objects.filter(user=user, recipe=obj).exists()
+            return obj.favorites.filter(user=user).exists()
         return False
 
     def get_is_in_shopping_cart(self, obj):
         user = self.context['request'].user
         if user.is_authenticated:
-            return ShoppingCart.objects.filter(
-                user=user, recipe=obj
-            ).exists()
+            return obj.shopping_carts.filter(user=user).exists()
         return False
 
 
 class RecipeCreateSerializer(serializers.ModelSerializer):
     ingredients = RecipeIngredientWriteSerializer(many=True)
     image = Base64ImageField(required=True, allow_null=False)
+    cooking_time = serializers.IntegerField(
+        min_value=MIN_COOKING_TIME,
+        max_value=MAX_COOKING_TIME,
+        required=True
+    )
 
     class Meta:
         model = Recipe
@@ -174,13 +171,13 @@ class RecipeCreateSerializer(serializers.ModelSerializer):
 
     def validate_image(self, value):
         if not value:
-            raise serializers.ValidationError("Поле image не может быть пустым.")
+            raise serializers.ValidationError('Поле image не может быть пустым.')
         return value
 
     def validate_ingredients(self, value):
         if not value:
             raise serializers.ValidationError(
-                "Нужен хотя бы один ингредиент."
+                'Нужен хотя бы один ингредиент.'
             )
         ingredient_ids = [
             item['id'].id if isinstance(item['id'], Ingredient)
@@ -188,13 +185,17 @@ class RecipeCreateSerializer(serializers.ModelSerializer):
         ]
         if len(ingredient_ids) != len(set(ingredient_ids)):
             raise serializers.ValidationError(
-                "Ингредиенты не должны повторяться."
+                'Ингредиенты не должны повторяться.'
             )
-        for item in value:
-            if item['amount'] <= 0:
-                raise serializers.ValidationError(
-                    "Количество ингредиента должно быть больше нуля."
-                )
+
+        return value
+
+    def validate_cooking_time(self, value):
+        if value < MIN_COOKING_TIME or value > MAX_COOKING_TIME:
+            raise serializers.ValidationError(
+                f'Время должно быть в пределах {MIN_COOKING_TIME} ' +
+                + f'до {MAX_COOKING_TIME} минут.'
+            )
         return value
 
     def create_ingredients(self, ingredients_data, recipe):
@@ -222,7 +223,7 @@ class RecipeCreateSerializer(serializers.ModelSerializer):
                 'ingredients': 'Это поле обязательно.'
             })
 
-        RecipeIngredient.objects.filter(recipe=instance).delete()
+        instance.recipe_ingredients.all().delete()
         self.create_ingredients(ingredients_data, instance)
 
         return super().update(instance, validated_data)
@@ -244,9 +245,7 @@ class SubscriptionCreateSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError(
                 'Нельзя подписаться на самого себя.'
             )
-        if Subscription.objects.filter(
-            subscriber=user, author=author
-        ).exists():
+        if author.subscribers.filter(subscriber=user).exists():
             raise serializers.ValidationError(
                 'Вы уже подписаны на этого пользователя.'
             )
@@ -285,12 +284,10 @@ class SubscriptionReadSerializer(serializers.ModelSerializer):
 
     def get_is_subscribed(self, obj):
         user = self.context['request'].user
-        return Subscription.objects.filter(
-            subscriber=user, author=obj.author
-        ).exists()
+        return obj.author.subscribers.filter(subscriber=user).exists()
 
     def get_recipes(self, obj):
-        recipes = Recipe.objects.filter(author=obj.author)
+        recipes = obj.author.recipes.all()
         request = self.context.get('request')
         limit = request.query_params.get('recipes_limit') if request else None
         if limit:

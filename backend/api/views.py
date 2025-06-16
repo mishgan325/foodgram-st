@@ -18,7 +18,6 @@ from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet, ReadOnlyModelViewSet
 
 from recipes.models import Ingredient, Recipe, RecipeIngredient
-from users.models import Subscription
 from .filters import RecipeFilter
 from .models import ShoppingCart, Favorite
 from .permissions import IsAuthorOrReadOnly
@@ -261,14 +260,14 @@ class RecipeViewSet(ModelViewSet):
         user = request.user
         recipe = self.get_object()
         if request.method == 'POST':
-            if Favorite.objects.filter(user=user, recipe=recipe).exists():
+            if user.user_favorites.filter(recipe=recipe).exists():
                 raise ValidationError('Рецепт уже в избранном.')
             Favorite.objects.create(user=user, recipe=recipe)
             serializer = ShortRecipeSerializer(
                 recipe, context={'request': request}
             )
             return Response(serializer.data, status=status.HTTP_201_CREATED)
-        favorite = Favorite.objects.filter(user=user, recipe=recipe)
+        favorite = user.user_favorites.filter(recipe=recipe)
         if not favorite.exists():
             raise ValidationError('Рецепта нет в избранном.')
         favorite.delete()
