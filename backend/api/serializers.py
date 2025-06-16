@@ -1,7 +1,4 @@
-import base64
-
 from django.contrib.auth import get_user_model
-from django.core.files.base import ContentFile
 from djoser.serializers import (
     UserCreateSerializer as BaseUserCreateSerializer,
     UserSerializer as BaseUserSerializer,
@@ -10,7 +7,6 @@ from rest_framework import serializers
 
 from recipes.models import Ingredient, Recipe, RecipeIngredient
 from users.models import Subscription
-from .models import Favorite, ShoppingCart
 
 from drf_extra_fields.fields import Base64ImageField
 
@@ -171,7 +167,7 @@ class RecipeCreateSerializer(serializers.ModelSerializer):
 
     def validate_image(self, value):
         if not value:
-            raise serializers.ValidationError('Поле image не может быть пустым.')
+            raise serializers.ValidationError('image не может быть пустым.')
         return value
 
     def validate_ingredients(self, value):
@@ -297,4 +293,4 @@ class SubscriptionReadSerializer(serializers.ModelSerializer):
         ).data
 
     def get_recipes_count(self, obj):
-        return Recipe.objects.filter(author=obj.author).count()
+        return obj.author.recipes.count()
