@@ -36,6 +36,16 @@ from .serializers import (
 User = get_user_model()
 
 
+TITLE_FONT = "DejaVuSans"
+TITLE_FONT_SIZE = 16
+TEXT_FONT = "DejaVuSans"
+TEXT_FONT_SIZE = 12
+MARGIN_TOP = 50
+LINE_HEIGHT = 20
+TITLE_LINE_HEIGHT = 30
+MARGIN_BOTTOM = 50
+
+
 class UserViewSet(DjoserUserViewSet):
     serializer_class = UserGetSerializer
     queryset = User.objects.all()
@@ -87,8 +97,7 @@ class UserViewSet(DjoserUserViewSet):
             )
             return Response(read_serializer.data,
                             status=status.HTTP_201_CREATED)
-        subscription = Subscription.objects.filter(subscriber=user,
-                                                   author=author)
+        subscription = user.subscriptions.filter(author=author)
         if not subscription.exists():
             raise ValidationError('Вы не подписаны на этого пользователя.')
         subscription.delete()
@@ -101,9 +110,7 @@ class UserViewSet(DjoserUserViewSet):
     )
     def subscriptions(self, request):
         user = request.user
-        queryset = Subscription.objects.filter(
-            subscriber=user
-        ).select_related('author')
+        queryset = user.subscriptions.select_related('author')
         page = self.paginate_queryset(queryset)
         serializer = SubscriptionReadSerializer(
             page, many=True, context={'request': request}
@@ -178,14 +185,14 @@ class RecipeViewSet(ModelViewSet):
         user = request.user
         recipe = self.get_object()
         if request.method == 'POST':
-            if ShoppingCart.objects.filter(user=user, recipe=recipe).exists():
+            if user.user_shopping_cart.filter(recipe=recipe).exists():
                 raise ValidationError('Рецепт уже в корзине.')
             ShoppingCart.objects.create(user=user, recipe=recipe)
             serializer = ShortRecipeSerializer(
                 recipe, context={'request': request}
             )
             return Response(serializer.data, status=status.HTTP_201_CREATED)
-        cart_item = ShoppingCart.objects.filter(user=user, recipe=recipe)
+        cart_item = user.user_shopping_cart.filter(recipe=recipe)
         if not cart_item.exists():
             raise ValidationError('Рецепта нет в корзине.')
         cart_item.delete()
@@ -221,11 +228,11 @@ class RecipeViewSet(ModelViewSet):
         )
         p = canvas.Canvas(response, pagesize=A4)
         width, height = A4
-        y = height - 50
-        p.setFont("DejaVuSans", 16)
+        y = height - MARGIN_TOP
+        p.setFont(TITLE_FONT, TITLE_FONT_SIZE)
         p.drawString(50, y, "Список покупок")
-        y -= 30
-        p.setFont("DejaVuSans", 12)
+        y -= TITLE_LINE_HEIGHT
+        p.setFont(TEXT_FONT, TEXT_FONT_SIZE)
         if not ingredients:
             p.drawString(50, y, "Корзина пуста.")
         else:
@@ -236,11 +243,11 @@ class RecipeViewSet(ModelViewSet):
                     f"{item['ingredient__measurement_unit']}"
                 )
                 p.drawString(50, y, line)
-                y -= 20
-                if y < 50:
+                y -= LINE_HEIGHT
+                if y < MARGIN_BOTTOM:
                     p.showPage()
-                    y = height - 50
-                    p.setFont("Helvetica", 12)
+                    y = height - MARGIN_TOP
+                    p.setFont(TEXT_FONT, TEXT_FONT_SIZE)
         p.showPage()
         p.save()
         return response
