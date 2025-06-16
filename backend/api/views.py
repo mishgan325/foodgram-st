@@ -184,14 +184,14 @@ class RecipeViewSet(ModelViewSet):
         user = request.user
         recipe = self.get_object()
         if request.method == 'POST':
-            if user.user_shopping_cart.filter(recipe=recipe).exists():
+            if user.shopping_cart_items.filter(recipe=recipe).exists():
                 raise ValidationError('Рецепт уже в корзине.')
             ShoppingCart.objects.create(user=user, recipe=recipe)
             serializer = ShortRecipeSerializer(
                 recipe, context={'request': request}
             )
             return Response(serializer.data, status=status.HTTP_201_CREATED)
-        cart_item = user.user_shopping_cart.filter(recipe=recipe)
+        cart_item = user.shopping_cart_items.filter(recipe=recipe)
         if not cart_item.exists():
             raise ValidationError('Рецепта нет в корзине.')
         cart_item.delete()
@@ -260,14 +260,14 @@ class RecipeViewSet(ModelViewSet):
         user = request.user
         recipe = self.get_object()
         if request.method == 'POST':
-            if user.user_favorites.filter(recipe=recipe).exists():
+            if user.favorites.filter(recipe=recipe).exists():
                 raise ValidationError('Рецепт уже в избранном.')
             Favorite.objects.create(user=user, recipe=recipe)
             serializer = ShortRecipeSerializer(
                 recipe, context={'request': request}
             )
             return Response(serializer.data, status=status.HTTP_201_CREATED)
-        favorite = user.user_favorites.filter(recipe=recipe)
+        favorite = user.favorites.filter(recipe=recipe)
         if not favorite.exists():
             raise ValidationError('Рецепта нет в избранном.')
         favorite.delete()
