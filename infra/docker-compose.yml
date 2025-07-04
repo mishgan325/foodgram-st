@@ -17,7 +17,7 @@ services:
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
 
   backend-mishgan325:
-    image: foodgram-backend-mishgan325
+    image: mishgan325/foodgram_final-backend
     build: ../backend/
     env_file: .env
     volumes:
@@ -36,7 +36,7 @@ services:
       "
 
   frontend-mishgan325:
-    image: foodgram-frontend-mishgan325
+    image: mishgan325/foodgram_final-frontend
     container_name: foodgram-front-mishgan325
     build: ../frontend
     volumes:
