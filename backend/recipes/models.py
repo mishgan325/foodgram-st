@@ -1,9 +1,10 @@
 from django.conf import settings
-from django.core.validators import MinValueValidator
+    from django.core.validators import MinValueValidator, MaxValueValidator
 from django.db import models
 
 MIN_COOKING_TIME = 1
 MIN_INGREDIENT_AMOUNT = 1
+MAX_INGREDIENT_AMOUNT = 32000
 INGREDIENT_NAME_MAX_LENGTH = 128
 
 
@@ -50,9 +51,12 @@ class Recipe(models.Model):
         verbose_name="Текстовое описание"
     )
 
-    cooking_time = models.PositiveIntegerField(
+    cooking_time = models.PositiveSmallIntegerField(
         verbose_name="Время приготовления (минуты)",
-        validators=[MinValueValidator(MIN_COOKING_TIME)]
+        validators=[
+            MinValueValidator(MIN_INGREDIENT_AMOUNT),
+            MaxValueValidator(MAX_INGREDIENT_AMOUNT)
+        ]
     )
 
     ingredients = models.ManyToManyField(
@@ -91,15 +95,19 @@ class RecipeIngredient(models.Model):
         verbose_name="Ингредиент"
     )
 
-    amount = models.PositiveIntegerField(
+    amount = models.PositiveSmallIntegerField(
         verbose_name="Количество",
-        validators=[MinValueValidator(MIN_INGREDIENT_AMOUNT)]
+        validators=[
+            MinValueValidator(MIN_INGREDIENT_AMOUNT),
+            MaxValueValidator(MAX_INGREDIENT_AMOUNT)
+        ]
     )
 
     class Meta:
         verbose_name = "Ингредиент в рецепте"
         verbose_name_plural = "Ингредиенты в рецептах"
         unique_together = ('recipe', 'ingredient')
+        ordering = ('recipe', 'ingredient')
 
     def __str__(self):
         return (
