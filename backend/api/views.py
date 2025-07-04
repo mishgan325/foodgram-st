@@ -17,10 +17,9 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet, ReadOnlyModelViewSet
 
-from recipes.models import Ingredient, Recipe, RecipeIngredient
-from users.models import Subscription
+from recipes.models import (
+    Ingredient, Recipe, RecipeIngredient, ShoppingCart, Favorite)
 from .filters import RecipeFilter
-from .models import ShoppingCart, Favorite
 from .permissions import IsAuthorOrReadOnly
 from .serializers import (
     AvatarUpdateSerializer,
@@ -34,6 +33,17 @@ from .serializers import (
 )
 
 User = get_user_model()
+
+
+TITLE_FONT = "DejaVuSans"
+TITLE_FONT_SIZE = 16
+TEXT_FONT = "DejaVuSans"
+TEXT_FONT_SIZE = 12
+MARGIN_TOP = 50
+MARGIN_LEFT = 50
+LINE_HEIGHT = 20
+TITLE_LINE_HEIGHT = 30
+MARGIN_BOTTOM = 50
 
 
 class UserViewSet(DjoserUserViewSet):
@@ -87,10 +97,12 @@ class UserViewSet(DjoserUserViewSet):
             )
             return Response(read_serializer.data,
                             status=status.HTTP_201_CREATED)
-        subscription = Subscription.objects.filter(subscriber=user,
-                                                   author=author)
-        if not subscription.exists():
-            raise ValidationError('Вы не подписаны на этого пользователя.')
+        subscription = user.subscriptions.filter(author=author).first()
+        if not subscription:
+            return Response(
+                {'errors': 'Подписка не существует.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
         subscription.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
@@ -101,9 +113,7 @@ class UserViewSet(DjoserUserViewSet):
     )
     def subscriptions(self, request):
         user = request.user
-        queryset = Subscription.objects.filter(
-            subscriber=user
-        ).select_related('author')
+        queryset = user.subscriptions.select_related('author')
         page = self.paginate_queryset(queryset)
         serializer = SubscriptionReadSerializer(
             page, many=True, context={'request': request}
@@ -178,14 +188,14 @@ class RecipeViewSet(ModelViewSet):
         user = request.user
         recipe = self.get_object()
         if request.method == 'POST':
-            if ShoppingCart.objects.filter(user=user, recipe=recipe).exists():
+            if user.shopping_cart_items.filter(recipe=recipe).exists():
                 raise ValidationError('Рецепт уже в корзине.')
             ShoppingCart.objects.create(user=user, recipe=recipe)
             serializer = ShortRecipeSerializer(
                 recipe, context={'request': request}
             )
             return Response(serializer.data, status=status.HTTP_201_CREATED)
-        cart_item = ShoppingCart.objects.filter(user=user, recipe=recipe)
+        cart_item = user.shopping_cart_items.filter(recipe=recipe)
         if not cart_item.exists():
             raise ValidationError('Рецепта нет в корзине.')
         cart_item.delete()
@@ -221,13 +231,13 @@ class RecipeViewSet(ModelViewSet):
         )
         p = canvas.Canvas(response, pagesize=A4)
         width, height = A4
-        y = height - 50
-        p.setFont("DejaVuSans", 16)
-        p.drawString(50, y, "Список покупок")
-        y -= 30
-        p.setFont("DejaVuSans", 12)
+        y = height - MARGIN_TOP
+        p.setFont(TITLE_FONT, TITLE_FONT_SIZE)
+        p.drawString(MARGIN_LEFT, y, "Список покупок")
+        y -= TITLE_LINE_HEIGHT
+        p.setFont(TEXT_FONT, TEXT_FONT_SIZE)
         if not ingredients:
-            p.drawString(50, y, "Корзина пуста.")
+            p.drawString(MARGIN_LEFT, y, "Корзина пуста.")
         else:
             for idx, item in enumerate(ingredients, 1):
                 line = (
@@ -235,12 +245,12 @@ class RecipeViewSet(ModelViewSet):
                     f"- {item['total_amount']} "
                     f"{item['ingredient__measurement_unit']}"
                 )
-                p.drawString(50, y, line)
-                y -= 20
-                if y < 50:
+                p.drawString(MARGIN_LEFT, y, line)
+                y -= LINE_HEIGHT
+                if y < MARGIN_BOTTOM:
                     p.showPage()
-                    y = height - 50
-                    p.setFont("Helvetica", 12)
+                    y = height - MARGIN_TOP
+                    p.setFont(TEXT_FONT, TEXT_FONT_SIZE)
         p.showPage()
         p.save()
         return response
@@ -254,14 +264,14 @@ class RecipeViewSet(ModelViewSet):
         user = request.user
         recipe = self.get_object()
         if request.method == 'POST':
-            if Favorite.objects.filter(user=user, recipe=recipe).exists():
+            if user.favorites.filter(recipe=recipe).exists():
                 raise ValidationError('Рецепт уже в избранном.')
             Favorite.objects.create(user=user, recipe=recipe)
             serializer = ShortRecipeSerializer(
                 recipe, context={'request': request}
             )
             return Response(serializer.data, status=status.HTTP_201_CREATED)
-        favorite = Favorite.objects.filter(user=user, recipe=recipe)
+        favorite = user.favorites.filter(recipe=recipe)
         if not favorite.exists():
             raise ValidationError('Рецепта нет в избранном.')
         favorite.delete()
